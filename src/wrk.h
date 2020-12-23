@@ -33,6 +33,7 @@ typedef struct {
     uint64_t requests;
     uint64_t bytes;
     uint64_t start;
+    uint64_t index;
     lua_State *L;
     errors errors;
     struct connection *cs;
@@ -61,6 +62,7 @@ typedef struct connection {
     buffer headers;
     buffer body;
     char buf[RECVBUF];
+    uint64_t index;
 } connection;
 
 #endif /* WRK_H */

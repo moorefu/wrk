@@ -204,9 +204,8 @@ void *thread_main(void *arg) {
 
     char *request = NULL;
     size_t length = 0;
-
     if (!cfg.dynamic) {
-        script_request(thread->L, &request, &length);
+        script_request(thread->L, &request, &length, 0);
     }
 
     thread->cs = zcalloc(thread->connections * sizeof(connection));
@@ -218,6 +217,7 @@ void *thread_main(void *arg) {
         c->request = request;
         c->length  = length;
         c->delayed = cfg.delay;
+        c->index     = 0;
         connect_socket(thread, c);
     }
 
@@ -336,7 +336,7 @@ static int response_complete(http_parser *parser) {
 
     if (c->headers.buffer) {
         *c->headers.cursor++ = '\0';
-        script_response(thread->L, status, &c->headers, &c->body);
+        script_response(thread->L, status, &c->headers, &c->body,c->index);
         c->state = FIELD;
     }
 
@@ -393,8 +393,10 @@ static void socket_writeable(aeEventLoop *loop, int fd, void *data, int mask) {
     }
 
     if (!c->written) {
+        thread->index++;
+        c->index    = thread->index;
         if (cfg.dynamic) {
-            script_request(thread->L, &c->request, &c->length);
+            script_request(thread->L, &c->request, &c->length, c->index);
         }
         c->start   = time_us();
         c->pending = cfg.pipeline;
